@@ -1,25 +1,71 @@
-#!/usr/bin/env python
-#
-# Copyright 2007 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
 import webapp2
+
+add_header = """
+<!DOCTYPE HTML>
+<head>
+    <title>Web Caesar</title>
+</head>
+<html>
+<body>
+    <h1>Web Caesar</h1>
+    <h3>Enter some text to encrypt</h3>
+"""
+
+add_footer = """
+</body>
+</html>
+"""
+new_message = ""
+
+message_form1 = """
+<form action="/encrypt" method="post" id="encrypt_form">
+    <textarea name="message" rows="5" cols="40" form="encrypt_form">"""
+
+message_form2="""
+</textarea>
+    <p><label>Enter how much you would like to rotate the letters</label></p>
+    <p><input type="text" name="rot"/></p>
+    <p><input type="submit" value="Encrypt"/></p>
+</form>
+"""
+
+def alphabet_position(letter):
+	result = ord(letter.lower()) - 97
+	return int(result)
+
+def rotate_character(char, rot):
+    rot = int(rot)
+    new_position = (alphabet_position(char) + rot) % 26
+    if char.isupper():
+        new_char = chr(new_position + 65)
+    else:
+        new_char = chr(new_position + 97)
+    return new_char
+
+def encrypt(text, rot):
+	encrypted_text = ""
+	for letter in text:
+		if letter.isalpha():
+			new_character = rotate_character(letter, rot)
+			encrypted_text += new_character
+		else:
+			encrypted_text += letter
+	return encrypted_text
 
 class MainHandler(webapp2.RequestHandler):
     def get(self):
-        self.response.write('Hello world!')
+        content = add_header + message_form1 + new_message + message_form2 + add_footer
+        self.response.write(content)
+
+class AddMessage(webapp2.RequestHandler):
+    def post(self):
+        new_message = self.request.get("message")
+        rot = self.request.get("rot")
+        encrypted_message = encrypt(new_message, rot)
+        content = add_header + message_form1 + encrypted_message + message_form2 + add_footer
+        self.response.write(content)
 
 app = webapp2.WSGIApplication([
-    ('/', MainHandler)
+    ('/', MainHandler),
+    ("/encrypt", AddMessage)
 ], debug=True)
